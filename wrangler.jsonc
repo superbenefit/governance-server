@@ -1,0 +1,95 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "governance-server",
+	// account_id removed for security - use CLOUDFLARE_ACCOUNT_ID env var
+	"main": "src/index.ts",
+	"compatibility_date": "2025-03-10",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	/**
+	 * Secrets (set via `npx wrangler secret put <name>`):
+	 *   GITHUB_TOKEN              - read-only PAT for GitHub API
+	 *   GITHUB_WEBHOOK_SECRET     - signature verification for push webhooks
+	 *   INTERNAL_REFRESH_SECRET   - protects /internal/refresh endpoint
+	 *
+	 * Vars (set in wrangler.jsonc or via dashboard):
+	 *   SPRB_CONTRACT_ADDRESS     - SPRB token contract on Ethereum mainnet
+	 *   HATS_TREE_ID              - SuperBenefit Hats tree ID on mainnet
+	 *   SNAPSHOT_SPACE            - Snapshot space slug (e.g. "superbenefit.eth")
+	 *   SB_ENS_NAME               - SuperBenefit ENS name (e.g. "superbenefit.eth")
+	 *   ETH_RPC_URL               - Cloudflare Web3 gateway (https://cloudflare-eth.com)
+	 *   GOVERNANCE_REPO           - e.g. "superbenefit/governance"
+	 *   KNOWLEDGE_BASE_REPO       - e.g. "superbenefit/knowledge-base"
+	 */
+	"vars": {
+		"ETH_RPC_URL": "https://cloudflare-eth.com",
+		"SNAPSHOT_SPACE": "superbenefit.eth",
+		"SB_ENS_NAME": "superbenefit.eth",
+		"GOVERNANCE_REPO": "superbenefit/governance",
+		"KNOWLEDGE_BASE_REPO": "superbenefit/knowledge-base"
+		// SPRB_CONTRACT_ADDRESS and HATS_TREE_ID must be confirmed and added here
+	},
+	"kv_namespaces": [
+		{
+			// Cached external state: Hats, SPRB, Snapshot, ENS profiles
+			"binding": "GOVERNANCE_CACHE",
+			"id": "REPLACE_WITH_KV_NAMESPACE_ID"
+		},
+		{
+			// Webhook delivery nonce deduplication
+			"binding": "SYNC_STATE",
+			"id": "REPLACE_WITH_KV_NAMESPACE_ID"
+		}
+	],
+	"r2_buckets": [
+		{
+			// Canonical markdown from superbenefit/governance repo
+			"binding": "GOVERNANCE_CONTENT",
+			"bucket_name": "superbenefit-governance",
+			"remote": true
+		}
+	],
+	"d1_databases": [
+		{
+			// Relational records: documents, domains, relationships, scope
+			"binding": "GOVERNANCE_DB",
+			"database_name": "governance-db",
+			"database_id": "REPLACE_WITH_D1_DATABASE_ID"
+		}
+	],
+	"workflows": [
+		{
+			"name": "governance-sync-workflow",
+			"binding": "GOVERNANCE_SYNC",
+			"class_name": "GovernanceSyncWorkflow"
+		}
+	],
+	"observability": {
+		"enabled": true
+	},
+	"dev": {
+		"port": 8789
+	},
+	"ratelimits": [
+		{
+			"name": "RATE_LIMITER",
+			"namespace_id": "1003",
+			"simple": { "limit": 100, "period": 60 }
+		}
+	],
+	/**
+	 * Cron triggers for KV cache refresh.
+	 * Schedule:
+	 *   Every 15 min  → refresh Snapshot proposals + activity
+	 *   Every 30 min  → refresh SPRB members + Hats roles
+	 *   Every 2 hours → refresh GitHub group definitions
+	 *   Every 24 hours → refresh ENS profiles
+	 *
+	 * Cloudflare only allows one cron expression per worker in free tier;
+	 * use the most frequent needed and gate internally by last-run timestamp.
+	 */
+	"triggers": {
+		"crons": ["*/15 * * * *"]
+	}
+}
