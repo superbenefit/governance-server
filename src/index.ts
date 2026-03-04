@@ -20,7 +20,18 @@ import { api } from './api/app';
 import { createMcpServer } from './mcp/server';
 import { verifyWebhookSignature } from './sync/github';
 import { runCacheRefresh } from './data/kv-cache';
-import { SECURITY_HEADERS } from '@superbenefit/porch/security';
+// Security headers applied to all non-Hono responses (MCP handler, rate limit errors).
+// Inlined from mcporch/src/security.ts — no porch dependency needed for a read-only server.
+const SECURITY_HEADERS: Record<string, string> = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Opener-Policy': 'same-site',
+  'Cross-Origin-Resource-Policy': 'same-site',
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'Content-Security-Policy': "default-src 'none'",
+};
 import type { GitHubPushEvent } from './types/sync';
 
 // Re-export workflow so Cloudflare can discover it via wrangler.jsonc class_name
