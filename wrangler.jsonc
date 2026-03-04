@@ -34,12 +34,12 @@
 		{
 			// Cached external state: Hats, SPRB, Snapshot, ENS profiles
 			"binding": "GOVERNANCE_CACHE",
-			"id": "REPLACE_WITH_KV_NAMESPACE_ID"
+			"id": "56d72a2b50bd443ab5757efc601d04c8"
 		},
 		{
 			// Webhook delivery nonce deduplication
 			"binding": "SYNC_STATE",
-			"id": "REPLACE_WITH_KV_NAMESPACE_ID"
+			"id": "6b98b7a4d10746cf90cbfcdc559597ee"
 		}
 	],
 	"r2_buckets": [
@@ -55,7 +55,7 @@
 			// Relational records: documents, domains, relationships, scope
 			"binding": "GOVERNANCE_DB",
 			"database_name": "governance-db",
-			"database_id": "REPLACE_WITH_D1_DATABASE_ID"
+			"database_id": "85babf79-71c3-4412-8917-134e0e9ff3d8"
 		}
 	],
 	"workflows": [
